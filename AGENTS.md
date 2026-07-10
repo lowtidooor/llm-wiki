@@ -1,114 +1,55 @@
 # LLM-Wiki Agent Rules
 
-All rules apply. Operating boundaries are hard constraints, and command rules do not relax them.
+All rules apply. Operating boundaries are hard constraints; command rules do not relax them.
 
 ## Operating Boundaries
 
-- `raw/` is user-owned source material.
-- Agents may create new Markdown raw sources only when explicitly requested by the user.
-- If the target raw path exists or is unclear, ask before writing.
-- Existing `raw/` assets are immutable: never edit, move, delete, normalize, or annotate them.
-- Agent-created raw sources must be Markdown under `raw/`, with a clear title, readable sections, and enough provenance in the text to explain what was captured.
-- Preserve user-provided source content faithfully.
-- Only summarize or synthesize it when the user explicitly asks for a summary/capture instead of a verbatim source.
+- `raw/` is user-owned source material. Existing assets are immutable: never edit, move, delete, normalize, or annotate them.
+- Create a raw source only on explicit user request. It must be Markdown under `raw/`, have a clear title and readable sections, and contain enough provenance to explain the capture. Ask before writing when its target path is existing or unclear.
+- Preserve user-provided source content faithfully. Summarize or synthesize it only when the user explicitly requests a summary/capture rather than a verbatim source.
 - Maintain only `wiki/`, templates, deterministic scripts, generated retrieval artifacts, and explicitly requested new raw Markdown sources.
-- Data model: `raw -> source -> subject`.
-- Valid roles: `source`, `knowledge`, `entity`.
-- Subjects are only `knowledge` or `entity`.
-- Never create `wiki/log.md` or any global log.
-- Do not add database systems, graph database systems, ontologies, embeddings, vector search, semantic indexes, graph retrieval, event systems, controlled vocabularies, privacy/sensitivity metadata, lock files, branch naming, coordination services, custom project skills, or core dependencies on `json-canvas`, `obsidian-cli`, or `defuddle`.
-- Do not run automatic Git operations, including Git add, commit, reset, checkout, or destructive Git commands. If explicitly asked to commit/amend, use Conventional Commits: `<type>(<scope>): <subject>` or `<type>: <subject>` with type `docs`, `fix`, `feat`, `test`, `chore`, `refactor`, or `revert`.
-- When command intent, scope, source identity, subject identity, provenance, merge/split/delete/archive decisions, or mutation safety is unclear, ask the user before mutating.
-- Do not guess.
+- Data model: `raw -> source -> subject`. Roles are `source`, `knowledge`, and `entity`; only `knowledge` and `entity` are subjects.
+- Never create `wiki/log.md` or a global log. Do not add database systems, graph database systems, ontologies, embeddings, vector search, semantic indexes, graph retrieval, event systems, controlled vocabularies, privacy/sensitivity metadata, lock files, branch naming, coordination services, custom project skills, or core dependencies on `json-canvas`, `obsidian-cli`, or `defuddle`.
+- Do not run automatic Git operations, including Git add, commit, reset, checkout, or destructive Git commands. Only when explicitly asked to commit/amend, use Conventional Commits: `<type>(<scope>): <subject>` or `<type>: <subject>`, with `docs`, `fix`, `feat`, `test`, `chore`, `refactor`, or `revert`.
+- Ask before mutating when command intent, scope, source/subject identity, provenance, merge/split/delete/archive decisions, or mutation safety is unclear. Do not guess.
 
 ## Note Structure
 
-- Copy the matching template in `wiki/templates/` when creating frontmatter.
-- Set `created` and `updated` to the current ISO 8601 timestamp with timezone offset.
-- Use YAML lists for `topics`, `tags`, and subject `aliases`.
-- Use `aliases: []` when a subject has no aliases.
-- Required frontmatter:
-  - All wiki notes: `role`, `topics`, `tags`, `created`, `updated`.
-  - `knowledge` and `entity`: `lifecycle`, `aliases`.
-  - `source`: `raw`, `source_type`, `origin`, `processed_scope`.
-- Metadata rules:
-  - `raw` must be exactly one `[[raw/...]]` target.
-  - `kind` is optional.
-  - `source_type` is free-form.
-  - Near-duplicates are warnings only.
-  - Lifecycle values: `active`, `stub`, `superseded`, `archived`.
-  - Topics are stable retrieval groups.
-  - Tags are sparse maintenance/workflow labels.
-- Required note bodies:
-  - `wiki/sources/`: one note per raw asset.
-  - Source notes must link the raw asset and record provenance, scope, evidence anchors, observations, affected notes, conflicts, and `## Processing Notes`.
-  - Source `## Processing Notes`: processed scope, evidence anchors used, remaining scope, affected notes, processing timestamp. Use this plus `processed_scope` for large-source progress.
-  - `wiki/knowledge/`: `## Summary`, `## Observations`, `## Conflicts`, `## Related`.
-  - `wiki/entities/`: `## Current State`, `## Timeline`, `## Conflicts`, `## Related`.
-- Section meaning:
-  - `Current State` is best current synthesis.
-  - `Timeline` holds dated and superseded facts.
-  - Changing entity history must not live only in source notes.
-  - `Conflicts` / `Conflicts And Uncertainty` hold contradictions with evidence.
+- Copy the matching template in `wiki/templates/`. `scripts/check` is authoritative for required fields, list types, lifecycle values, valid raw targets, required sections, and source Processing Notes bullets.
+- Required metadata: every note has `role`, `topics`, `tags`, `created`, and `updated`; subjects also have `lifecycle` and `aliases`; sources also have `raw`, `source_type`, `origin`, and `processed_scope`. Set timestamps to current ISO 8601 with timezone offset; use YAML lists and `aliases: []` when empty.
+- `raw` is exactly one `[[raw/...]]` target; `kind` is optional; `source_type` is free-form; near-duplicates are warnings only. Lifecycle is `active`, `stub`, `superseded`, or `archived`.
+- Topics are stable retrieval groups; tags are sparse maintenance/workflow labels.
+- Create one source note per raw asset. It links the raw asset and records provenance, scope, evidence anchors, observations, affected notes, conflicts, and Processing Notes. Use its `processed_scope` and Processing Notes to track large-source progress.
+- Knowledge notes use Summary, Observations, Conflicts, and Related. Entity notes use Current State, Timeline, Conflicts, and Related. Current State is the best current synthesis; Timeline holds dated/superseded facts; changing entity history must not live only in source notes; conflict sections record contradictions with evidence.
 
 ## Provenance And Identity
 
-- Page-level provenance is acceptable for low-risk synthesis.
-- Claim-level evidence is required for people, clients, schedules, money, memberships, projects, decisions, temporal facts, disputed claims, operational state, and entity `Current State`.
-- Use the best available evidence anchor: page, chapter, section, timestamp, message range, heading, or short quote fragment.
-- Every updated `knowledge` or `entity` note must link to at least one supporting source note.
-- Every source note must list affected knowledge/entity notes under `## Integrated Into` or `## Processing Notes`.
-- Before creating a subject, check title, aliases, `wiki/catalog.jsonl`, backlinks, topic overlap, source overlap, and entity identifiers.
-- Prefer updating existing subjects. Merge only same-referent notes. Split only when one note serves multiple independent query intents.
-- Prefer `archived` or `superseded` over deletion. Delete only accidental empty/redundant pages with no unique content, evidence, or inbound links.
-- Ask the user when identity is ambiguous.
+- Page-level provenance is acceptable for low-risk synthesis. Require claim-level evidence for people, clients, schedules, money, memberships, projects, decisions, temporal or disputed claims, operational state, and entity Current State.
+- Use the best evidence anchor available: page, chapter, section, timestamp, message range, heading, or short quote fragment.
+- Every updated subject links at least one supporting source note. Every source lists affected subjects under Integrated Into or Processing Notes.
+- Before creating a subject, check title, aliases, `wiki/catalog.jsonl`, backlinks, topic/source overlap, and entity identifiers. Prefer updating existing subjects.
+- Merge only same-referent notes; split only independent query intents. Prefer archived or superseded over deletion; delete only accidental empty/redundant pages with no unique content, evidence, or inbound links. Ask when identity is ambiguous.
+
+## Ingest Retrieval Budget
+
+During `ingest`, do not reason over the entire vault:
+
+1. Read the target raw file or requested scope, then its matching source note; create a source draft only after source identity is clear.
+2. Extract title terms, named entities, explicit concepts, aliases, technologies/products/frameworks/standards, and relevant origin/channel/author/publication terms.
+3. Search `wiki/catalog.jsonl` and `scripts/search`; inspect exact title/alias matches, then at most 10 lexically relevant knowledge/entity candidates and their direct links when identity, overlap, or provenance requires it.
+4. If there is no strong match, create a new subject rather than broad-scanning. If more than 10 plausible subjects remain, stop and produce an ingest plan before mutation.
+5. Read another raw source only when its source note points to it as evidence and the subject note is insufficient. Do not inspect unrelated generic-topic notes; broad vault sweeps require explicit approval.
 
 ## Commands
 
-- `ingest [raw path] [raw scope]`:
-  - Applies: exactly one raw Markdown asset and one source note. Raw scope defaults to the full file.
-  - Behavior:
-    - If no raw path is provided, inspect new or modified uncommitted Markdown files under `raw/`.
-    - Requests like `ingest`, `ingest new data`, or `ingest new sources` count as no raw path.
-    - Ingest when exactly one candidate exists.
-    - Ask which file to process when multiple candidates exist.
-    - Ask for a raw path when no candidates exist.
-    - Read raw frontmatter when present.
-    - Identify source identity/origin/type/scope/topics/entities.
-    - Update matching subjects before creating subjects.
-    - Add links/provenance.
-  - Requires approval: ambiguous path, multiple candidates, unclear identity/provenance/mutation safety.
-  - Ends by: run `scripts/reindex` then `scripts/check`. Repair ingest-caused errors for at most two cycles. Report remaining errors. Do not write logs.
-- `query <question>` or a plain-language question about vault contents:
-  - Applies: read-only questions about vault contents.
-  - Behavior:
-    - Treat plain-language questions as wiki queries only when they ask about knowledge represented in `wiki/` or supporting raw sources.
-    - Treat questions about the repository, docs, scripts, or workflow as normal development requests.
-    - Read `wiki/index.md`.
-    - Semantically expand the query with the LLM.
-    - Run `scripts/search`.
-    - Inspect knowledge/entity notes first, source evidence second, raw only if needed.
-  - Requires approval: ambiguous query/repository intent.
-  - Ends by: return note paths and evidence links. Mutate nothing.
-- `lint`:
-  - Applies: safe maintenance only unless approved.
-  - Behavior: validate metadata, regenerate stale artifacts, fix obvious broken links, normalize unambiguous formatting, add exact-match aliases/backlinks, report duplicates/orphans/source-type fragmentation/topic fragmentation.
-  - Requires approval: merge, split, delete, archive, supersede, broad topic or `source_type` cleanup, structural rewrite.
-  - Ends by: report findings and any allowed safe changes.
+- `ingest [raw path] [raw scope]` applies to one raw Markdown asset and one source note; the default scope is the full file. With no path (including `ingest`, `ingest new data`, or `ingest new sources`), inspect new/modified uncommitted Markdown under `raw/`: ingest one candidate, ask which when multiple, and ask for a path when none. Read raw frontmatter when present; identify source identity/origin/type/scope/topics/entities; update matching subjects before creating new ones; add links and provenance. Require approval for ambiguous path, multiple candidates, or unclear identity/provenance/mutation safety. Finish with `scripts/reindex`, then `scripts/check`; repair ingest-caused errors for at most two cycles, report remaining errors, and write no log.
+- `query <question>` and plain-language vault questions are read-only. Treat repository/docs/scripts/workflow questions as normal development work; ask when ambiguous. Read `wiki/index.md`, semantically expand only this query, run `scripts/search`, inspect knowledge/entity notes before source evidence and raw only when needed, then return note paths and evidence links. Mutate nothing.
+- `lint` performs only safe maintenance: validate metadata, regenerate stale artifacts, fix obvious broken links, normalize unambiguous formatting, add exact-match aliases/backlinks, and report duplicates, orphans, source-type fragmentation, and topic fragmentation. Require approval for merge, split, delete, archive, supersede, broad topic/source-type cleanup, or structural rewrite; report findings and allowed changes.
 
 ## Retrieval, Validation, And Concurrency
 
-- `wiki/index.md` and `wiki/catalog.jsonl` are generated caches, not authority.
-- Use lexical retrieval via `scripts/search`.
-- LLM semantic expansion is allowed only during `query`.
-- After mutating wiki notes, run `scripts/reindex`, then `scripts/check`, and repair validation errors caused by the change.
-- `scripts/reindex` must not validate or repair ordinary notes.
-- `scripts/check` is read-only and must not require source aliases, `kind`, privacy metadata, controlled vocabularies, or any global log.
-- When modifying code, run `python3 -m ruff format`, `python3 -m ruff check`, and relevant validation/tests.
-- Run `python3 -m unittest discover scripts/tests` when scripts, templates, metadata rules, or retrieval behavior change.
-- Retrieval/query agents are read-only.
-- Do not run multiple mutating agents concurrently.
-- A mutating agent assumes it is the only writer to `wiki/`.
-- Rebuild generated artifacts once before user review.
-- When available, use `obsidian-markdown` for Markdown syntax.
-- Do not copy skill files into this repository or make skills a runtime dependency.
+- `wiki/index.md` and `wiki/catalog.jsonl` are generated caches, not authority. Use lexical retrieval via `scripts/search`; LLM semantic expansion is allowed only during `query`.
+- After changing wiki notes, run `scripts/reindex`, then `scripts/check`, repairing change-caused errors. Reindex must not validate or repair ordinary notes; check is read-only and must not require source aliases, `kind`, privacy metadata, controlled vocabularies, or a global log.
+- For code changes, run `python3 -m ruff format`, `python3 -m ruff check`, and relevant validation/tests. Run `python3 -m unittest discover scripts/tests` when scripts, templates, metadata rules, or retrieval behavior change.
+- Retrieval/query agents are read-only. Do not run multiple mutating agents concurrently; a mutating agent is the only writer to `wiki/`. Rebuild generated artifacts once before user review.
+- When available, use `obsidian-markdown` for Markdown syntax. Do not copy skill files into this repository or make skills a runtime dependency.
